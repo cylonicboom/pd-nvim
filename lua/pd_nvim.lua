@@ -3,10 +3,18 @@ local pd = require("pd_nvim.pd")
 local pd_nvim = {}
 
 local function with_defaults(options)
-  return {
+  local retval = {
     pd_path = options.pd_path ~= nil or "~/src/fgspd",
-    rom_id = options.rom_id ~= nil or "ntsc-final"
+    rom_id = options.rom_id ~= nil or "ntsc-final",
+    keymap = {
+      find_func = "<c-f>f",
+      find_struct = "<c-f>s",
+      find_define_typedef = "<c-f>t",
+      debug_perfect_dark = "<c-f>d"
+    }
   }
+  setmetatable(retval, { __index = options })
+  return retval
 end
 
 local function debug_perfect_dark()
@@ -16,6 +24,8 @@ local function debug_perfect_dark()
   if #makefile_port > 0 then
     -- make a new tab
     vim.cmd("tabnew")
+    -- TODO: use paths from config
+    -- TODO: move gdb scripts to a better location
     vim.cmd("GdbStart gdb -x ~/src/pd/fgspd/pd.gdb ~/src/pd/fgspd/build/ntsc-final-port/pd.exe")
   else
     vim.cmd("echo 'not in a PD project!'")
@@ -32,26 +42,11 @@ function pd_nvim.setup(options)
   options = options or {}
   pd_nvim.options = with_defaults(options)
 
-  -- print(pd_nvim.options.rom_id)
-  -- print(pd_nvim.options.pd_path)
-
-  local perfect_dark_mappings = {
-    P = {
-      name = "Perfect Dark",
-      d = { function() debug_perfect_dark() end, "Debug Perfect Dark" },
-    }
-  }
-
-  local non_pd_mappings = {
-    P = {
-      name = "No PD Project",
-    }
-  }
-
   -- do here any startup your plugin needs, like creating commands and
   -- mappings that depend on values passed in options
   vim.api.nvim_create_user_command("PdFindFunc", pd_nvim.find_func, {})
   vim.api.nvim_create_user_command("PdFindStruct", pd_nvim.find_struct, {})
+  vim.api.nvim_create_user_command("PdFindDefineTypedef", pd_nvim.find_define_typedef, {})
 
   -- disable when leaving fgspd project
   vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" },
@@ -59,11 +54,11 @@ function pd_nvim.setup(options)
       callback = function()
         local project_name = vim.fn.fnamemodify(vim.fn.getcwd(), ':t')
         if project_name ~= "fgspd" then
-          pcall(function()
-            local mymap = non_pd_mappings
-            require 'which-key'.register(
-              mymap,
-              which_key_prefix)
+          local retval = pcall(function()
+            vim.api.nvim_buf_del_keymap(0, 'n', pd_nvim.options.keymap.find_func)
+            vim.api.nvim_buf_del_keymap(0, 'n', pd_nvim.options.keymap.find_struct)
+            vim.api.nvim_buf_del_keymap(0, 'n', pd_nvim.options.keymap.find_define_typedef)
+            vim.api.nvim_buf_del_keymap(0, 'n', pd_nvim.options.keymap.debug_perfect_dark)
           end)
         end
       end
@@ -74,42 +69,20 @@ function pd_nvim.setup(options)
     -- TODO: this should be the basename of the project dir in our config
     pattern = "*/fgspd*",
     callback = function()
-      pcall(function()
-        require 'which-key'.register(
-          perfect_dark_mappings,
-          which_key_prefix
-        )
-      end)
+      vim.keymap.set('n', pd_nvim.options.keymap.find_func, function() pd_nvim.find_func() end,
+        { buffer = 0, desc = "Find function" })
+      vim.keymap.set('n', pd_nvim.options.keymap.find_struct, function() pd_nvim.find_struct() end,
+        { buffer = 0, desc = "Find struct" })
+      vim.keymap.set('n', pd_nvim.options.keymap.find_define_typedef, function() pd_nvim.find_define_typedef() end,
+        { buffer = 0, desc = "Find define/typedef" })
+      vim.keymap.set('n', pd_nvim.options.keymap.debug_perfect_dark, function() debug_perfect_dark() end,
+        { buffer = 0, desc = "Debug Perfect Dark" })
     end
   })
 end
 
 function pd_nvim.is_configured()
   return pd_nvim.options ~= nil
-end
-
--- This is a function that will be used outside this plugin code.
--- Think of it as a public API
-function pd_nvim.make_docker()
-  if not pd_nvim.is_configured() then
-    return
-  end
-
-  -- try to keep all the heavy logic on pure functions/modules that do not
-  -- depend on Neovim APIs. This makes them easy to test
-  local make_docker = pd.make_docker()
-end
-
-function pd_nvim.make_perfect_dark(romid, path)
-  if not pd_nvim.is_configured() then
-    return
-  end
-
-  romid, path = pd_nvim.options.rom_id, pd_nvim.options.pd_path
-
-  -- try to keep all the heavy logic on pure functions/modules that do not
-  -- depend on Neovim APIs. This makes them easy to test
-  local make_pd = pd.make_perfect_dark(romid, path)
 end
 
 function pd_nvim.find_func()
@@ -126,6 +99,14 @@ function pd_nvim.find_struct()
   end
 
   local find_struct = pd.find_struct()
+end
+
+function pd_nvim.find_define_typedef()
+  if not pd_nvim.is_configured() then
+    return
+  end
+
+  local find_define_typedef = pd.find_define_typedef()
 end
 
 return pd_nvim
