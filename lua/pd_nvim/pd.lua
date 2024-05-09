@@ -4,7 +4,7 @@ local telescope = require('telescope')
 
 function pd.find_func(word)
    require("telescope").extensions.live_grep_args.live_grep_args({
-      default_text = '^\\w+\\W' ..
+      default_text = '^\\w+\\W.*' ..
           word .. '\\(.*\\)'
    })
 end
