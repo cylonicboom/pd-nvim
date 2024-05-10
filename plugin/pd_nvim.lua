@@ -14,7 +14,3 @@ vim.g.loaded_pd_nvim = 1
 -- Be careful to not overuse this file!
 -- local my_awesome_plugin = require("pd_nvim")
 --
-vim.api.nvim_create_user_command(
-  "PdSetup",
-  function() require 'pd_nvim'.setup() end,
-  {})
