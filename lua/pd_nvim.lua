@@ -20,20 +20,6 @@ local function with_defaults(options)
   return retval
 end
 
-local function debug_perfect_dark()
-  local makefile_port = vim.fn.findfile("Makefile.port",
-    vim.fn.getcwd() .. ";",
-    -1)
-  if #makefile_port > 0 then
-    -- make a new tab
-    vim.cmd("tabnew")
-    -- TODO: use paths from config
-    -- TODO: move gdb scripts to a better location
-    vim.cmd("GdbStart gdb -x ~/src/pd/fgspd/pd.gdb ~/src/pd/fgspd/build/ntsc-final-port/pd.exe")
-  else
-    vim.cmd("echo 'not in a PD project!'")
-  end
-end
 
 
 function pd_nvim.enable_keybinds()
@@ -118,6 +104,13 @@ end
 
 function pd_nvim.is_configured()
   return pd_nvim.options ~= nil
+end
+
+local function debug_perfect_dark()
+  if not pd_nvim.is_configured() then
+    return
+  end
+  pd.debug_perfect_dark()
 end
 
 function pd_nvim.find_func(func_name)
