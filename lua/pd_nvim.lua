@@ -40,30 +40,29 @@ function pd_nvim.enable_keybinds()
   end
 end
 
-function pd_nvim.enable_commands()
-  -- register commands
-  -- cheese asii art:
-  --
-  -- find under cursor
-  vim.api.nvim_create_user_command("PdFindFuncUnderCursor", pd_nvim.find_func_under_cursor, {})
-  vim.api.nvim_create_user_command("PdFindStructUnderCursor", pd_nvim.find_struct_under_cursor, {})
-  vim.api.nvim_create_user_command("PdFindDefineTypedefUnderCursor", pd_nvim.find_define_typedef_under_cursor, {})
+local commands = {
+  { name = "PdFindFuncUnderCursor",          func = "find_func_under_cursor",           type = "lua" },
+  { name = "PdFindStructUnderCursor",        func = "find_struct_under_cursor",         type = "lua" },
+  { name = "PdFindDefineTypedefUnderCursor", func = "find_define_typedef_under_cursor", type = "lua" },
+  { name = "PdFindFunc",                     func = "find_func",                        type = "vim" },
+  { name = "PdFindStruct",                   func = "find_struct",                      type = "vim" },
+  { name = "PdFindDefineTypedef",            func = "find_define_typedef",              type = "vim" }
+}
 
-  -- for cmdline searches
-  vim.cmd("command! -nargs=1 PdFindFunc lua require('pd_nvim').find_func(<f-args>)")
-  vim.cmd("command! -nargs=1 PdFindStruct lua require('pd_nvim').find_struct(<f-args>)")
-  vim.cmd("command! -nargs=1 PdFindDefineTypedef lua require('pd_nvim').find_define_typedef(<f-args>)")
+function pd_nvim.enable_commands()
+  for _, command in ipairs(commands) do
+    if command.type == "lua" then
+      vim.api.nvim_create_user_command(command.name, pd_nvim[command.func], {})
+    elseif command.type == "vim" then
+      vim.cmd(string.format("command! -nargs=1 %s lua require('pd_nvim').%s(<f-args>)", command.name, command.func))
+    end
+  end
 end
 
 function pd_nvim.disable_commands()
-  -- unregister commands
-  vim.cmd("delcommand PdFindFuncUnderCursor")
-  vim.cmd("delcommand PdFindStructUnderCursor")
-  vim.cmd("delcommand PdFindDefineTypedefUnderCursor")
-
-  vim.cmd("delcommand PdFindFunc")
-  vim.cmd("delcommand PdFindStruct")
-  vim.cmd("delcommand PdFindDefineTypedef")
+  for _, command in ipairs(commands) do
+    vim.cmd("delcommand " .. command.name)
+  end
 end
 
 -- This function is supposed to be called explicitly by users to configure this
