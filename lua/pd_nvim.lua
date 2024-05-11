@@ -20,18 +20,44 @@ local function with_defaults(options)
   return retval
 end
 
+local commands = {
+  { name = "PdFindFuncUnderCursor",          func = "find_func_under_cursor",           type = "lua", desc = "Find function under cursor" },
+  { name = "PdFindStructUnderCursor",        func = "find_struct_under_cursor",         type = "lua", desc = "Find struct under cursor" },
+  { name = "PdFindDefineTypedefUnderCursor", func = "find_define_typedef_under_cursor", type = "lua", desc = "Find Define/Typedef under cursor" },
+  { name = "PdFindFunc",                     func = "find_func",                        type = "vim", desc = "Find function" },
+  { name = "PdFindStruct",                   func = "find_struct",                      type = "vim", desc = "Find struct" },
+  { name = "PdFindDefineTypedef",            func = "find_define_typedef",              type = "vim", desc = "Find FindDefineTypedef" }
+}
 
+function pd_nvim.setup_telescope_live_grep_args()
+  local telescope = require("telescope")
+  local lga_actions = require("telescope-live-grep-args.actions")
+  require("telescope").load_extension("live_grep_args")
+  telescope.setup {
+    extensions = {
+      live_grep_args = {
+        auto_quoting = false, -- enable/disable auto-quoting
+      }
+    }
+  }
+end
 
 function pd_nvim.enable_keybinds()
-  local keymapOptions = {
-    find_func = { cmd = ":PdFindFunc ", desc = "Find function" },
-    find_struct = { cmd = ":PdFindStruct ", desc = "Find struct" },
-    find_define_typedef = { cmd = ":PdFindDefineTypedef ", desc = "Find define/typedef" },
-    find_func_under_cursor = { cmd = function() pd_nvim.find_func_under_cursor() end, desc = "Find function under cursor" },
-    find_struct_under_cursor = { cmd = function() pd_nvim.find_struct_under_cursor() end, desc = "Find struct under cursor" },
-    find_define_typedef_under_cursor = { cmd = function() pd_nvim.find_define_typedef_under_cursor() end, desc = "Find define/typedef under cursor" },
-    debug_perfect_dark = { cmd = function() debug_perfect_dark() end, desc = "Debug Perfect Dark" },
-  }
+  local keymapOptions = {}
+
+  for _, command in ipairs(commands) do
+    if command.type == "lua" then
+      keymapOptions[command.func] = {
+        cmd = function() pd_nvim[command.func]() end,
+        desc = command.desc
+      }
+    elseif command.type == "vim" then
+      keymapOptions[command.func] = {
+        cmd = ":" .. command.name .. " ",
+        desc = command.desc
+      }
+    end
+  end
 
   for key, value in pairs(pd_nvim.options.keymap) do
     if keymapOptions[key] then
@@ -39,15 +65,6 @@ function pd_nvim.enable_keybinds()
     end
   end
 end
-
-local commands = {
-  { name = "PdFindFuncUnderCursor",          func = "find_func_under_cursor",           type = "lua" },
-  { name = "PdFindStructUnderCursor",        func = "find_struct_under_cursor",         type = "lua" },
-  { name = "PdFindDefineTypedefUnderCursor", func = "find_define_typedef_under_cursor", type = "lua" },
-  { name = "PdFindFunc",                     func = "find_func",                        type = "vim" },
-  { name = "PdFindStruct",                   func = "find_struct",                      type = "vim" },
-  { name = "PdFindDefineTypedef",            func = "find_define_typedef",              type = "vim" }
-}
 
 function pd_nvim.enable_commands()
   for _, command in ipairs(commands) do
@@ -61,8 +78,26 @@ end
 
 function pd_nvim.disable_commands()
   for _, command in ipairs(commands) do
-    vim.cmd("delcommand " .. command.name)
+    pcall(function() vim.cmd("delcommand " .. command.name) end)
   end
+end
+
+function pd_nvim.disable_keybinds()
+  for key, _ in pairs(pd_nvim.options.keymap) do
+    pcall(function()
+      vim.api.nvim_buf_del_keymap(0, 'n', key)
+    end)
+  end
+end
+
+function pd_nvim.deactivate()
+  pd_nvim.disable_commands()
+  pd_nvim.disable_keybinds()
+end
+
+function pd_nvim.activate()
+  pd_nvim.enable_commands()
+  pd_nvim.enable_keybinds()
 end
 
 -- This function is supposed to be called explicitly by users to configure this
@@ -73,19 +108,13 @@ function pd_nvim.setup(options)
   -- function/module makes it easier to reason about all possible changes
   options = options or {}
   pd_nvim.options = with_defaults(options)
-
-
+  -- TODO: refactor as vim autocommands so I can assign them to groups and remove them later
   -- disable when leaving fgspd project
   vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" },
     {
       callback = function()
         if not string.match(vim.fn.getcwd(), "/fgspd") then -- check if the file path does not contain 'fgspd'
-          pcall(pd_nvim.disable_commands)
-          pcall(function()
-            for key, _ in pairs(pd_nvim.options.keymap) do
-              vim.api.nvim_buf_del_keymap(0, 'n', key)
-            end
-          end)
+          pd_nvim.deactivate()
         end
       end
     }
@@ -94,11 +123,14 @@ function pd_nvim.setup(options)
   vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
     -- TODO: this should be the basename of the project dir in our config
     pattern = "*/fgspd*",
-    callback = function()
-      pd_nvim.enable_commands()
-      pd_nvim.enable_keybinds()
-    end
+    callback = pd_nvim.activate
   })
+  pcall(function()
+    require 'which-key'.register {
+      ['<c-f>'] = { name = 'Perfect Dark' }, { prefix = "<leader>" } }
+  end)
+
+  pd_nvim.setup_telescope_live_grep_args()
 end
 
 function pd_nvim.is_configured()
