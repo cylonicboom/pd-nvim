@@ -26,7 +26,8 @@ local commands = {
   { name = "PdFindDefineTypedefUnderCursor", func = "find_define_typedef_under_cursor", type = "lua", desc = "Find Define/Typedef under cursor" },
   { name = "PdFindFunc",                     func = "find_func",                        type = "vim", desc = "Find function" },
   { name = "PdFindStruct",                   func = "find_struct",                      type = "vim", desc = "Find struct" },
-  { name = "PdFindDefineTypedef",            func = "find_define_typedef",              type = "vim", desc = "Find FindDefineTypedef" }
+  { name = "PdFindDefineTypedef",            func = "find_define_typedef",              type = "vim", desc = "Find FindDefineTypedef" },
+  { name = "PdDebugPerfectDark",             func = "debug_perfect_dark",               type = "lua", desc = "Debug Perfect Dark" }
 }
 
 function pd_nvim.setup_telescope_live_grep_args()
@@ -137,11 +138,11 @@ function pd_nvim.is_configured()
   return pd_nvim.options ~= nil
 end
 
-local function debug_perfect_dark()
+function pd_nvim.debug_perfect_dark()
   if not pd_nvim.is_configured() then
     return
   end
-  pd.debug_perfect_dark()
+  pd.debug_perfect_dark(options.rom_id)
 end
 
 function pd_nvim.find_func(func_name)
