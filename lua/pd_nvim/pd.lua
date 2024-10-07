@@ -40,7 +40,7 @@ function pd.debug_perfect_dark(romid)
       local gdb_script = pd_nvim_path .. "/lua/pd_nvim/pd.gdb"
 
       vim.cmd("echo 'Starting PD debug session with gdb script" .. gdb_script .. ".'")
-      vim.cmd("GdbStart gdb -x " .. gdb_script .. " ~/src/pd/fgspd/build/" .. romid .. "port/pd.exe")
+      vim.cmd("GdbStart gdb -x " .. gdb_script .. " ~/src/pd/fgspd/build/" .. romid .. "-port/pd.exe")
    else
       vim.cmd("echo 'not in a PD project!'")
    end

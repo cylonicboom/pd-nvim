@@ -142,7 +142,7 @@ function pd_nvim.debug_perfect_dark()
   if not pd_nvim.is_configured() then
     return
   end
-  pd.debug_perfect_dark(options.rom_id)
+  pd.debug_perfect_dark(pd_nvim.options.rom_id)
 end
 
 function pd_nvim.find_func(func_name)
