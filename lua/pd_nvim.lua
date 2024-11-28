@@ -4,7 +4,7 @@ local pd_nvim = {}
 
 local function with_defaults(options)
   local retval = {
-    pd_path = options.pd_path or "~/src/fgspd",
+    pd_path = options.pd_path or os.getenv("PD"),
     rom_id = options.rom_id or "ntsc-final",
     keymap = {
       find_func = "<leader><c-f>F",
