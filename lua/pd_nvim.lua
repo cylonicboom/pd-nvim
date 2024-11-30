@@ -6,16 +6,18 @@ local function with_defaults(options)
   local retval = {
     pd_path = options.pd_path or os.getenv("PD"),
     rom_id = options.rom_id or "ntsc-final",
-    keymap = {
-      find_func = "<leader><c-f>F",
-      find_struct = "<leader><c-f>S",
-      find_define_typedef = "<leader><c-f>T",
-      find_func_under_cursor = "<leader><c-f>f",
-      find_struct_under_cursor = "<leader><c-f>s",
-      find_define_typedef_under_cursor = "<leader><c-f>t",
-      debug_perfect_dark = "<leader><c-f>d"
-    }
+    plugin_leader = options.plugin_leader or "<leader><c-f>",
   }
+  local keymap = {
+    find_func = retval.plugin_leader .. "F",
+    find_struct = retval.plugin_leader .. "S",
+    find_define_typedef = retval.plugin_leader .. "T",
+    find_func_under_cursor = retval.plugin_leader .. "f",
+    find_struct_under_cursor = retval.plugin_leader .. "s",
+    find_define_typedef_under_cursor = retval.plugin_leader .. "t",
+    -- debug_perfect_dark = "<leader><c-f>d"
+  }
+  retval.keymap = keymap
   setmetatable(retval, { __index = options })
   return retval
 end
@@ -27,7 +29,7 @@ local commands = {
   { name = "PdFindFunc",                     func = "find_func",                        type = "vim", desc = "Find function" },
   { name = "PdFindStruct",                   func = "find_struct",                      type = "vim", desc = "Find struct" },
   { name = "PdFindDefineTypedef",            func = "find_define_typedef",              type = "vim", desc = "Find FindDefineTypedef" },
-  { name = "PdDebugPerfectDark",             func = "debug_perfect_dark",               type = "lua", desc = "Debug Perfect Dark" }
+  -- { name = "PdDebugPerfectDark",             func = "debug_perfect_dark",               type = "lua", desc = "Debug Perfect Dark" }
 }
 
 function pd_nvim.setup_telescope_live_grep_args()
@@ -99,6 +101,8 @@ end
 function pd_nvim.activate()
   pd_nvim.enable_commands()
   pd_nvim.enable_keybinds()
+  require 'which-key'.add {
+    { pd_nvim.options.plugin_leader, icon = "🧀", group = "Perfect Dark" } }
 end
 
 -- This function is supposed to be called explicitly by users to configure this
@@ -128,10 +132,6 @@ function pd_nvim.setup(options)
     pattern = "*/" .. targetleaf .. "*",
     callback = pd_nvim.activate
   })
-  pcall(function()
-    require 'which-key'.register {
-      ['<c-f>'] = { name = 'Perfect Dark' }, { prefix = "<leader>" } }
-  end)
 
   pd_nvim.setup_telescope_live_grep_args()
 end

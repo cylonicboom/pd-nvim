@@ -13,47 +13,23 @@
 You can install `pd-nvim` using your favorite plugin manager. For example, if you're using `vim-plug`, add the following line to your `init.vim`:
 
 ```lua
-{
+  {
     'pd-nvim',
     dependencies = {
-      'sakhnik/nvim-gdb',
-      'folke/which-key.nvim',
+      "folke/which-key.nvim",
       'nvim-telescope/telescope.nvim',
       {
-        "telescope-live-grep-args.nvim",
+        "nvim-telescope/telescope-live-grep-args.nvim",
         -- This will not install any breaking changes.
         -- For major updates, this must be adjusted manually.
-        branch = "pd-nvim",
-        dev = true,
+        -- branch = "pd-nvim",
+        -- dev = true,
         version = "^1.0.0",
-        config = function()
-          local telescope = require("telescope")
-          local lga_actions = require("telescope-live-grep-args.actions")
-          print("Setting up live-grep-args")
-          require("telescope").load_extension("live_grep_args")
-          telescope.setup {
-            extensions = {
-              live_grep_args = {
-                auto_quoting = false, -- enable/disable auto-quoting
-              }
-            }
-          }
-        end,
       },
-
     },
-    config = function()
-      require 'pd_nvim'.setup()
-
-      require 'which-key'.register(
-        {
-          ['<c-f>'] = {
-            name = "perfect dark",
-          }
-        },
-        { prefix = "<leader>" })
-    end,
-}
+    config = true,
+    dev = true
+  },
 ```
 
 Then run `:PlugInstall`.
@@ -64,17 +40,16 @@ First, you need to set up the plugin with your preferences:
 
 ```lua
 require('pd_nvim').setup({
-  pd_path = "~/src/fgspd",  -- path to your Perfect Dark source code
+  pd_path = "~/src/fgspd",  -- path to your Perfect Dark source code, or set PD environment variable
   rom_id = "ntsc-final",  -- ROM ID
-  keymap = {  -- custom key mappings
-    find_func = "<leader><c-f>F",
-    find_struct = "<leader><c-f>S",
-    find_define_typedef = "<leader><c-f>T",
-    find_func_under_cursor = "<leader><c-f>f",
-    find_struct_under_cursor = "<leader><c-f>s",
-    find_define_typedef_under_cursor = "<leader><c-f>t",
-    debug_perfect_dark = "<leader><c-f>d"
-  }
+  -- keymap = {  -- custom key mappings
+  --   find_func = "<leader><c-f>F",
+  --   find_struct = "<leader><c-f>S",
+  --   find_define_typedef = "<leader><c-f>T",
+  --   find_func_under_cursor = "<leader><c-f>f",
+  --   find_struct_under_cursor = "<leader><c-f>s",
+  --   find_define_typedef_under_cursor = "<leader><c-f>t",
+  -- }
 })
 ```
 
