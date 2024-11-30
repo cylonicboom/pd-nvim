@@ -1,12 +1,11 @@
 # pd-nvim
 
-`pd-nvim` is a Neovim plugin designed to enhance your development workflow when working with Perfect Dark source code. It provides a set of commands and key mappings to quickly find functions, structs, and typedefs in your codebase. It also includes a debugging feature for Perfect Dark projects.
+A very opinionated neovim helper for Perfect Dark PC port modding
 
 ## Features
 
 - Find functions, structs, and typedefs by name
 - Find functions, structs, and typedefs under the cursor
-- Debug Perfect Dark projects
 
 ## Installation
 
