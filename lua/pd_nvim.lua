@@ -4,6 +4,10 @@ local pd_nvim = {}
 
 local function with_defaults(options)
   local retval = {
+    pd = options.pd or { {
+      pd_path = options.pd_path or os.getenv("PD"),
+      rom_id = options.rom_id or "ntsc-final"
+    } },
     pd_path = options.pd_path or os.getenv("PD"),
     rom_id = options.rom_id or "ntsc-final",
     plugin_leader = options.plugin_leader or "<leader><c-f>",
@@ -113,25 +117,29 @@ function pd_nvim.setup(options)
   -- function/module makes it easier to reason about all possible changes
   options = options or {}
   pd_nvim.options = with_defaults(options)
-  local targetleaf = vim.fn.fnamemodify(pd_nvim.options.pd_path, ":t")
-  vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" },
-    {
-      callback = function()
-        local leaf = vim.fn.fnamemodify(vim.fn.getcwd(), ":t")
-        -- print("pd_nvim.options.pd_path " .. pd_nvim.options.pd_path .. " leaf " .. leaf)
-        if leaf ~= targetleaf then -- check if the file path does not contain 'fgspd'
-          -- print("deactivating " .. leaf .. " " .. targetleaf)
-          pd_nvim.deactivate()
+  for _, pd_config in ipairs(pd_nvim.options.pd) do
+    local targetleaf = vim.fn.fnamemodify(pd_config.pd_path, ":t")
+    local targetsleaves = {}
+    for _, pd_config in ipairs(pd_nvim.options.pd) do
+      table.insert(targetsleaves, vim.fn.fnamemodify(pd_config.pd_path, ":t"))
+    end
+    -- enable when entering pd project
+    vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
+      -- TODO: this should be the basename of the project dir in our config
+      pattern = "*/" .. targetleaf .. "*",
+      callback = pd_nvim.activate
+    })
+    vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" },
+      {
+        callback = function()
+          local leaf = vim.fn.fnamemodify(vim.fn.getcwd(), ":t")
+          if not vim.tbl_contains(targetsleaves, leaf) then
+            pd_nvim.deactivate()
+          end
         end
-      end
-    }
-  )
-  -- enable when entering pd project
-  vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter" }, {
-    -- TODO: this should be the basename of the project dir in our config
-    pattern = "*/" .. targetleaf .. "*",
-    callback = pd_nvim.activate
-  })
+      }
+    )
+  end
 
   pd_nvim.setup_telescope_live_grep_args()
 end
