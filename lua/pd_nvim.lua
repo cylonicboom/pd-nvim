@@ -142,6 +142,37 @@ function pd_nvim.setup(options)
   end
 
   pd_nvim.setup_telescope_live_grep_args()
+
+
+  local modconfig_syntax = function()
+    vim.bo.filetype = "modconfig"
+    -- Define syntax matches
+    vim.cmd([[
+    syntax keyword ModconfigStageKeyword stage
+    syntax keyword ModconfigStageProperty bgfile tilesfile padsfile setupfile alarm
+    syntax keyword ModconfigMusicKeyword music primarytrack xtrack
+    syntax keyword ModconfigWeatherKeyword weather exclude_rooms clear
+    syntax match ModconfigComment /^#.*$/
+    syntax match ModconfigHexValue /0x[0-9a-fA-F]\+/
+    syntax region ModconfigString start=/"/ end=/"/
+    ]])
+  end
+  -- Associate modconfig.txt with the modconfig filetype
+  vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
+    pattern = "modconfig.txt",
+    callback = modconfig_syntax,
+  })
+
+  -- Syntax highlighting for modconfig.txt files
+
+  -- Define syntax groups
+  vim.api.nvim_set_hl(0, "ModconfigStageKeyword", { link = "Keyword" })
+  vim.api.nvim_set_hl(0, "ModconfigStageProperty", { link = "Identifier" })
+  vim.api.nvim_set_hl(0, "ModconfigMusicKeyword", { link = "Keyword" })
+  vim.api.nvim_set_hl(0, "ModconfigWeatherKeyword", { link = "Keyword" })
+  vim.api.nvim_set_hl(0, "ModconfigHexValue", { link = "Tag" })
+  vim.api.nvim_set_hl(0, "ModconfigString", { link = "String" })
+  vim.api.nvim_set_hl(0, "ModconfigComment", { link = "Comment" })
 end
 
 function pd_nvim.is_configured()
