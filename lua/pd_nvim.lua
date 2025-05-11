@@ -109,6 +109,117 @@ function pd_nvim.activate()
     { pd_nvim.options.plugin_leader, icon = "🧀", group = "Perfect Dark" } }
 end
 
+pd_nvim.getpdpath = function()
+  local arm64_path = "build/pd.arm64"
+  local x86_64_path = "build/pd.x86_64"
+  if vim.fn.filereadable(arm64_path) == 1 then
+    return arm64_path
+  elseif vim.fn.filereadable(x86_64_path) == 1 then
+    return x86_64_path
+  else
+    return nil
+  end
+end
+
+pd_nvim.pd_setup_lldb = function(opts)
+  opts = opts or {}
+
+  opts.cfg = opts.cfg or {
+    configurations = {
+      -- C lang configurations
+      c = {
+        -- sensible default for the pc port
+        {
+          name = "Debug Perfect Dark (PC Port, log to stdout/stderr)",
+          type = "lldb",
+          request = "launch",
+          cwd = "${workspaceFolder}",
+          program = pd.getpdpath,
+        },
+      },
+    },
+  }
+  require("dap-lldb").setup(opts.cfg)
+
+  -- HACK: maybe I should use verylazy
+  local dapui = nil
+
+  local ensure_dapui = function()
+    if dapui == nil then
+      dapui = require 'dapui'
+      dapui.setup()
+    end
+  end
+
+  local pd_setup_debugger_keybinds = function()
+    local dap = require 'dap'
+
+    local known_pd_exes = { 'pd.x86_64', 'pd.arm64', 'pd.exe' }
+
+
+    vim.keymap.set('n', '<leader>db', function() dap.toggle_breakpoint() end,
+      { desc = '[D]ebug [B]reakpoint' })
+    vim.keymap.set('n', '<leader>do', function()
+        ensure_dapui()
+        if dapui then dapui.toggle() end
+      end,
+      { desc = '[D]ap UI' })
+    vim.keymap.set('n', '<leader>dc', function()
+        dap.continue()
+      end,
+      { desc = '[D]ebug Continue' })
+    vim.keymap.set('n', '<leader>dT', function()
+      local function sigterm(process_name)
+        pcall(function()
+          vim.fn.system('killall -9 ' .. process_name)
+        end)
+        pcall(function() vim.fn.system('pkill -SIGTERM -i ' .. process_name) end)
+      end
+      pcall(function()
+        dap.terminate()
+      end)
+      for _, exe in ipairs(known_pd_exes) do
+        sigterm(exe)
+      end
+    end, { desc = '[D]ebug [T]erminate' })
+    -- debug
+    vim.keymap.set('n', '<leader>dp', function()
+      local function sigint(process_name)
+        pcall(function()
+          vim.fn.system('killall -s SIGINT ' .. process_name)
+        end)
+        pcall(function() vim.fn.system('pkill -SIGINT -i ' .. process_name) end)
+      end
+
+      for _, exe in ipairs(known_pd_exes) do
+        sigint(exe)
+      end
+    end, { desc = '[D]ebug [P]ause' })
+    -- debug step over
+    vim.keymap.set('n', '<leader>ds', function() dap.step_over() end,
+      { desc = '[D]ebug [S]tep Over' })
+    -- debug step into
+    vim.keymap.set('n', '<leader>di', function() dap.step_into() end,
+      { desc = '[D]ebug [I]nto' })
+    -- debug step out (gdb finish)
+    vim.keymap.set('n', '<leader>df', function() dap.step_out() end,
+      { desc = '[D]ebug [F]out' })
+    -- debug up
+    vim.keymap.set('n', '<leader>du', function() dap.up() end,
+      { desc = '[D]ebug [U]p' })
+    -- debug down
+    vim.keymap.set('n', '<leader>dd', function() dap.down() end,
+      { desc = '[D]ebug [D]own' })
+    -- debug run to cursor
+    vim.keymap.set('n', '<leader>dr', function() dap.run_to_cursor() end,
+      { desc = '[D]ebug [R]un to cursor' })
+    require 'which-key'.add {
+      { "<leader>d", icon = "🔭🦝", group = "debug" },
+    }
+  end
+  pd_setup_debugger_keybinds()
+end
+
 -- This function is supposed to be called explicitly by users to configure this
 -- plugin
 function pd_nvim.setup(options)
@@ -156,6 +267,14 @@ function pd_nvim.setup(options)
     syntax match ModconfigHexValue /0x[0-9a-fA-F]\+/
     syntax region ModconfigString start=/"/ end=/"/
     ]])
+    -- Syntax highlighting for modconfig.txt files
+    vim.api.nvim_set_hl(0, "ModconfigStageKeyword", { link = "Keyword" })
+    vim.api.nvim_set_hl(0, "ModconfigStageProperty", { link = "Identifier" })
+    vim.api.nvim_set_hl(0, "ModconfigMusicKeyword", { link = "Keyword" })
+    vim.api.nvim_set_hl(0, "ModconfigWeatherKeyword", { link = "Keyword" })
+    vim.api.nvim_set_hl(0, "ModconfigHexValue", { link = "Tag" })
+    vim.api.nvim_set_hl(0, "ModconfigString", { link = "String" })
+    vim.api.nvim_set_hl(0, "ModconfigComment", { link = "Comment" })
   end
   -- Associate modconfig.txt with the modconfig filetype
   vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
@@ -163,16 +282,23 @@ function pd_nvim.setup(options)
     callback = modconfig_syntax,
   })
 
-  -- Syntax highlighting for modconfig.txt files
+  -- setup lldb for perfect dark
+  pd_nvim.pd_setup_lldb(pd_nvim.options)
 
-  -- Define syntax groups
-  vim.api.nvim_set_hl(0, "ModconfigStageKeyword", { link = "Keyword" })
-  vim.api.nvim_set_hl(0, "ModconfigStageProperty", { link = "Identifier" })
-  vim.api.nvim_set_hl(0, "ModconfigMusicKeyword", { link = "Keyword" })
-  vim.api.nvim_set_hl(0, "ModconfigWeatherKeyword", { link = "Keyword" })
-  vim.api.nvim_set_hl(0, "ModconfigHexValue", { link = "Tag" })
-  vim.api.nvim_set_hl(0, "ModconfigString", { link = "String" })
-  vim.api.nvim_set_hl(0, "ModconfigComment", { link = "Comment" })
+  vim.api.nvim_create_user_command('Dprint', function(opts)
+    local result = {}
+    for _, word in ipairs(opts.fargs) do
+      for char in word:gmatch('.') do
+        table.insert(result, string.format("'%s'", char))
+      end
+      table.insert(result, "' '") -- Add a space between words
+    end
+    result[#result] = nil         -- Remove the trailing space
+    table.insert(result, "'\\n'")
+    table.insert(result, "0")
+    local dprint_statement = "dprint " .. table.concat(result, ",") .. ","
+    vim.api.nvim_put({ dprint_statement }, 'l', true, true)
+  end, { nargs = '+', complete = nil })
 end
 
 function pd_nvim.is_configured()
