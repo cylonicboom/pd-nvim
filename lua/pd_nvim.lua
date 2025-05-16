@@ -25,13 +25,13 @@ local function with_defaults(options)
         find_define_typedef_under_cursor = retval.plugin_leader .. "t",
 
         -- debugger keymaps
-        pd_debug_terminate = "<leader>dt",
-        pd_debug_breakpoint = "<leader>db",
-        pd_debug_pause = "<leader>dp",
-        pd_debug_continue = "<leader>dc",
-        pd_debug_step_over = "<leader>ds",
-        pd_debug_step_down = "<leader>dd",
-        pd_debug_run_to_cursor = "<leader>dr",
+        pd_debug_terminate = retval.debug_leader .. "t",
+        pd_debug_breakpoint = retval.debug_leader .. "b",
+        pd_debug_pause = retval.debug_leader .. "p",
+        pd_debug_continue = retval.debug_leader .. "c",
+        pd_debug_step_over = retval.debug_leader .. "s",
+        pd_debug_step_down = retval.debug_leader .. "d",
+        pd_debug_run_to_cursor = retval.debug_leader .. "r",
     }
     retval.keymap = keymap
     setmetatable(retval, { __index = options })
