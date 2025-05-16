@@ -14,7 +14,7 @@ local function with_defaults(options)
         rom_id = options.rom_id or "ntsc-final",
         plugin_leader = options.plugin_leader or "<leader><c-f>",
     }
-    retval.debug_leader = options.debug_leader or retval.plugin_leader .. "d"
+    retval.debug_leader = options.debug_leader or "<leader>" .. "d"
     local keymap = {
         -- project navigation keymaps
         find_func = retval.plugin_leader .. "F",
@@ -30,8 +30,11 @@ local function with_defaults(options)
         pd_debug_pause = retval.debug_leader .. "p",
         pd_debug_continue = retval.debug_leader .. "c",
         pd_debug_step_over = retval.debug_leader .. "s",
+        pd_debug_step_into = retval.debug_leader .. "i",
+        pd_debug_step_out = retval.debug_leader .. "f",
         pd_debug_step_down = retval.debug_leader .. "d",
         pd_debug_run_to_cursor = retval.debug_leader .. "r",
+        pd_debug_toggle = retval.debug_leader .. "o",
     }
     retval.keymap = keymap
     setmetatable(retval, { __index = options })
@@ -51,10 +54,13 @@ local commands = {
     { name = "PdDebugPause",                   func = "pd_debug_pause",                   type = "lua", desc = "[D]ebug [P]ause" },
     { name = "PdDebugContinue",                func = "pd_debug_continue",                type = "lua", desc = "[D]ebug [C]ontinue" },
     { name = "PdDebugStepOver",                func = "pd_debug_step_over",               type = "lua", desc = "[D]ebug [S]tep Over" },
-    { name = "PdDebugStepDown",                func = "pd_debug_step_down",               type = "lua", desc = "[D]ebug [D]own" },
+    { name = "PdDebugStepDown",                func = "pd_debug_step_down",               type = "lua", desc = "[D]ebug Step [D]own" },
+    { name = "PdDebugStepInto",                func = "pd_debug_step_into",               type = "lua", desc = "[D]ebug Step [I]nto" },
+    { name = "PdDebugStepOut",                 func = "pd_debug_step_out",                type = "lua", desc = "[D]ebug [F]inish Function (Step Out)" },
     { name = "PdDebugRunToCursor",             func = "pd_debug_run_to_cursor",           type = "lua", desc = "[D]ebug [R]un to cursor" },
     { name = "PdDebugTerminate",               func = "pd_debug_terminate",               type = "lua", desc = "[D]ebug [T]erminate" },
     { name = "PdDebugBreakpoint",              func = "pd_debug_breakpoint",              type = "lua", desc = "[D]ebug [B]reakpoint" },
+    { name = "PdDebugUIToggle",                func = "pd_debug_toggle",                  type = "lua", desc = "[D]ebug UI Toggle" },
 }
 
 function pd_nvim.setup_telescope_live_grep_args()
