@@ -97,6 +97,8 @@ function debug._gdb_debug_perfect_dark(romid)
 end
 
 function debug.pd_debug_toggle()
+    ensure_dapui()
+    dapui.toggle()
 end
 
 function debug.pd_debug_terminate()
