@@ -6,6 +6,14 @@ A very opinionated neovim helper for Perfect Dark PC port modding
 
 - Find functions, structs, and typedefs by name
 - Find functions, structs, and typedefs under the cursor
+- lldb-dap helpers for debugging
+  - `PdDebugPause`
+  - `PdDebugContinue`
+  - `PdDebugStepOver`
+  - `PdDebugStepDown`
+  - `PdDebugRunToCursor`
+  - `PdDebugTerminate`
+  - `PdDebugBreakpoint`
 
 ## Installation
 
@@ -14,24 +22,12 @@ You can install `pd-nvim` using your favorite plugin manager. For example, if yo
 ```lua
   {
     'pd-nvim',
-    dependencies = {
-      "folke/which-key.nvim",
-      'nvim-telescope/telescope.nvim',
-      {
-        "nvim-telescope/telescope-live-grep-args.nvim",
-        -- This will not install any breaking changes.
-        -- For major updates, this must be adjusted manually.
-        -- branch = "pd-nvim",
-        -- dev = true,
-        version = "^1.0.0",
-      },
-    },
     config = true,
     dev = true
   },
 ```
 
-Then run `:PlugInstall`.
+Then run `:Lazy install pd-nvim`.
 
 ## Usage
 
@@ -56,7 +52,7 @@ Then, you can use the following commands:
 
 - `:PdFindFunc <func_name>`: Find a function by name
 - `:PdFindStruct <struct_name>`: Find a struct by name
-- `:PdFindDefineTypedef <typedef_name>`: Find a typedef by name
+- `:PdFindDefineTypedef <typedef_name>` Find a typedef by name
 - `:PdFindFuncUnderCursor`: Find the function under the cursor
 - `:PdFindStructUnderCursor`: Find the struct under the cursor
 - `:PdFindDefineTypedefUnderCursor`: Find the typedef under the cursor
