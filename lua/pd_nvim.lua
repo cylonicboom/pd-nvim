@@ -33,6 +33,7 @@ local function with_defaults(options)
         pd_debug_step_into = retval.debug_leader .. "i",
         pd_debug_step_out = retval.debug_leader .. "f",
         pd_debug_step_down = retval.debug_leader .. "d",
+        pd_debug_step_up = retval.debug_leader .. "u",
         pd_debug_run_to_cursor = retval.debug_leader .. "r",
         pd_debug_toggle = retval.debug_leader .. "o",
     }
@@ -43,29 +44,52 @@ end
 
 local commands = {
     -- navigation
-    { name = "PdFindFuncUnderCursor",          func = "find_func_under_cursor",           type = "lua", desc = "Find function under cursor" },
-    { name = "PdFindStructUnderCursor",        func = "find_struct_under_cursor",         type = "lua", desc = "Find struct under cursor" },
-    { name = "PdFindDefineTypedefUnderCursor", func = "find_define_typedef_under_cursor", type = "lua", desc = "Find Define/Typedef under cursor" },
-    { name = "PdFindFunc",                     func = "find_func",                        type = "vim", desc = "Find function" },
-    { name = "PdFindStruct",                   func = "find_struct",                      type = "vim", desc = "Find struct" },
-    { name = "PdFindDefineTypedef",            func = "find_define_typedef",              type = "vim", desc = "Find FindDefineTypedef" },
+    { name = "PdFindFuncUnderCursor",          func = "find_func_under_cursor",           type = "lua",  desc = "Find function under cursor" },
+    { name = "PdFindStructUnderCursor",        func = "find_struct_under_cursor",         type = "lua",  desc = "Find struct under cursor" },
+    { name = "PdFindDefineTypedefUnderCursor", func = "find_define_typedef_under_cursor", type = "lua",  desc = "Find Define/Typedef under cursor" },
+    { name = "PdFindFunc",                     func = "find_func",                        type = "vim",  desc = "Find function" },
+    { name = "PdFindStruct",                   func = "find_struct",                      type = "vim",  desc = "Find struct" },
+    { name = "PdFindDefineTypedef",            func = "find_define_typedef",              type = "vim",  desc = "Find FindDefineTypedef" },
 
     -- debugger
-    { name = "PdDebugPause",                   func = "pd_debug_pause",                   type = "lua", desc = "[D]ebug [P]ause" },
-    { name = "PdDebugContinue",                func = "pd_debug_continue",                type = "lua", desc = "[D]ebug [C]ontinue" },
-    { name = "PdDebugStepOver",                func = "pd_debug_step_over",               type = "lua", desc = "[D]ebug [S]tep Over" },
-    { name = "PdDebugStepDown",                func = "pd_debug_step_down",               type = "lua", desc = "[D]ebug Step [D]own" },
-    { name = "PdDebugStepInto",                func = "pd_debug_step_into",               type = "lua", desc = "[D]ebug Step [I]nto" },
-    { name = "PdDebugStepOut",                 func = "pd_debug_step_out",                type = "lua", desc = "[D]ebug [F]inish Function (Step Out)" },
-    { name = "PdDebugRunToCursor",             func = "pd_debug_run_to_cursor",           type = "lua", desc = "[D]ebug [R]un to cursor" },
-    { name = "PdDebugTerminate",               func = "pd_debug_terminate",               type = "lua", desc = "[D]ebug [T]erminate" },
-    { name = "PdDebugBreakpoint",              func = "pd_debug_breakpoint",              type = "lua", desc = "[D]ebug [B]reakpoint" },
-    { name = "PdDebugUIToggle",                func = "pd_debug_toggle",                  type = "lua", desc = "[D]ebug UI Toggle" },
+    -- set global to true so we can use them even if we get jumped outside the project
+    -- by DAP
+    { name = "PdDebugPause",                   func = "pd_debug_pause",                   global = true, type = "lua",                             desc = "[D]ebug [P]ause" },
+    { name = "PdDebugContinue",                func = "pd_debug_continue",                global = true, type = "lua",                             desc = "[D]ebug [C]ontinue" },
+    { name = "PdDebugStepOver",                func = "pd_debug_step_over",               global = true, type = "lua",                             desc = "[D]ebug [S]tep Over" },
+    { name = "PdDebugStepDown",                func = "pd_debug_step_down",               global = true, type = "lua",                             desc = "[D]ebug Step [D]own" },
+    { name = "PdDebugStepUp",                  func = "pd_debug_step_up",                 global = true, type = "lua",                             desc = "[D]ebug Step [U]p" },
+    { name = "PdDebugStepInto",                func = "pd_debug_step_into",               global = true, type = "lua",                             desc = "[D]ebug Step [I]nto" },
+    { name = "PdDebugStepOut",                 func = "pd_debug_step_out",                global = true, type = "lua",                             desc = "[D]ebug [F]inish Function (Step Out)" },
+    { name = "PdDebugRunToCursor",             func = "pd_debug_run_to_cursor",           global = true, type = "lua",                             desc = "[D]ebug [R]un to cursor" },
+    { name = "PdDebugTerminate",               func = "pd_debug_terminate",               global = true, type = "lua",                             desc = "[D]ebug [T]erminate" },
+    { name = "PdDebugBreakpoint",              func = "pd_debug_breakpoint",              global = true, type = "lua",                             desc = "[D]ebug [B]reakpoint" },
+    { name = "PdDebugUIToggle",                func = "pd_debug_toggle",                  global = true, type = "lua",                             desc = "[D]ebug UI Toggle" },
 }
 
-function pd_nvim.setup_telescope_live_grep_args()
-end
+-- helpful lookup table to find commands by name or function
+setmetatable(commands, {
+    __index = function(_, key)
+        -- then try to lookup by function
+        for _, command in ipairs(commands) do
+            if command.func == key then
+                return command
+            end
+        end
 
+        -- then try to lookup by name
+        for _, command in ipairs(commands) do
+            if command.name == key then
+                return command
+            end
+        end
+        -- idk you figure it out
+        return nil
+    end,
+})
+
+
+-- enable / disable command / keybinds respects the global flag
 function pd_nvim.enable_keybinds()
     local keymapOptions = {}
 
@@ -84,8 +108,12 @@ function pd_nvim.enable_keybinds()
     end
 
     for key, value in pairs(pd_nvim.options.keymap) do
+        local command = commands[key]
+        if command ~= nil and command.global then
+            buffer = nil
+        end
         if keymapOptions[key] then
-            vim.keymap.set('n', value, keymapOptions[key].cmd, { buffer = 0, desc = keymapOptions[key].desc })
+            vim.keymap.set('n', value, keymapOptions[key].cmd, { buffer = buffer, desc = keymapOptions[key].desc })
         end
     end
 end
@@ -102,21 +130,36 @@ end
 
 function pd_nvim.disable_commands()
     for _, command in ipairs(commands) do
-        pcall(function() vim.cmd("delcommand " .. command.name) end)
+        local command = commands[command.name]
+        if command ~= nil and command.global then
+            goto continue
+        end
+        pcall(function()
+            vim.cmd("delcommand " .. command.name)
+        end)
+        ::continue::
     end
 end
 
 function pd_nvim.disable_keybinds()
     for key, _ in pairs(pd_nvim.options.keymap) do
+        local command = commands[key]
+        if command ~= nil and command.global then
+            goto continue
+        end
         pcall(function()
             vim.api.nvim_buf_del_keymap(0, 'n', key)
         end)
+        ::continue::
     end
 end
 
 function pd_nvim.deactivate()
     pd_nvim.disable_commands()
     pd_nvim.disable_keybinds()
+    -- require 'which-key'.remove_group("Perfect Dark")
+    -- we want the debug to enabled if we seem to have left the project
+    -- in case dap watch jumped us outside the project
 end
 
 function pd_nvim.activate()
@@ -281,7 +324,15 @@ function pd_nvim.pd_debug_step_down()
         return
     end
 
-    local pd_debug_step_down = pd.pd_debug_step_down()
+    local pd_debug_step_down = pd.pd_debug_down()
+end
+
+function pd_nvim.pd_debug_step_up()
+    if not pd_nvim.is_configured() then
+        return
+    end
+
+    local pd_debug_step_up = pd.pd_debug_up()
 end
 
 function pd_nvim.pd_debug_run_to_cursor()
