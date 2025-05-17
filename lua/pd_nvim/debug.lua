@@ -2,6 +2,19 @@ local debug = {}
 
 local vim = _G['vim']
 
+local dap = require 'dap'
+local sign = vim.fn.sign_define
+
+vim.api.nvim_set_hl(0, "DapBreakpoint", { fg = "#FFB3BA" })
+vim.api.nvim_set_hl(0, "DapBreakpointCondition", { fg = "#FFFFBA" })
+vim.api.nvim_set_hl(0, "DapLogPoint", { fg = "#BAE1FF" })
+vim.api.nvim_set_hl(0, "DapStopped", { fg = "#BFFCC6", bold = true })
+
+sign("DapBreakpoint", { text = "●", texthl = "DapBreakpoint", linehl = "", numhl = "" })
+sign("DapBreakpointCondition", { text = "●", texthl = "DapBreakpointCondition", linehl = "", numhl = "" })
+sign("DapLogPoint", { text = "◆", texthl = "DapLogPoint", linehl = "", numhl = "" })
+sign('DapStopped', { text = '', texthl = 'DapStopped', linehl = 'DapStopped', numhl = 'DapStopped' })
+
 debug.getpdpath = function()
     local arm64_path = "build/pd.arm64"
     local x86_64_path = "build/pd.x86_64"
