@@ -37,6 +37,8 @@ local function with_defaults(options)
         pd_debug_run_to_cursor = retval.debug_leader .. "r",
         pd_debug_toggle = retval.debug_leader .. "o",
         pd_debug_watch_under_cursor = retval.debug_leader .. "w",
+        pd_save_dap_watches = retval.debug_leader .. "W",
+        pd_restore_dap_watches = retval.debug_leader .. "R",
     }
     retval.keymap = keymap
     setmetatable(retval, { __index = options })
@@ -55,20 +57,22 @@ local commands = {
     -- debugger
     -- set global to true so we can use them even if we get jumped outside the project
     -- by DAP
-    { name = "PdDebugPause",                   func = "pd_debug_pause",                   global = true,  type = "lua",                             desc = "[D]ebug [P]ause" },
-    { name = "PdDebugContinue",                func = "pd_debug_continue",                global = true,  type = "lua",                             desc = "[D]ebug [C]ontinue" },
-    { name = "PdDebugStepOver",                func = "pd_debug_step_over",               global = true,  type = "lua",                             desc = "[D]ebug [S]tep Over" },
-    { name = "PdDebugStepDown",                func = "pd_debug_step_down",               global = true,  type = "lua",                             desc = "[D]ebug Step [D]own" },
-    { name = "PdDebugStepUp",                  func = "pd_debug_step_up",                 global = true,  type = "lua",                             desc = "[D]ebug Step [U]p" },
-    { name = "PdDebugStepInto",                func = "pd_debug_step_into",               global = true,  type = "lua",                             desc = "[D]ebug Step [I]nto" },
-    { name = "PdDebugStepOut",                 func = "pd_debug_step_out",                global = true,  type = "lua",                             desc = "[D]ebug [F]inish Function (Step Out)" },
-    { name = "PdDebugRunToCursor",             func = "pd_debug_run_to_cursor",           global = true,  type = "lua",                             desc = "[D]ebug [R]un to cursor" },
-    { name = "PdDebugTerminate",               func = "pd_debug_terminate",               global = true,  type = "lua",                             desc = "[D]ebug [T]erminate" },
-    { name = "PdDebugBreakpoint",              func = "pd_debug_breakpoint",              global = true,  type = "lua",                             desc = "[D]ebug [B]reakpoint" },
-    { name = "PdDebugUIToggle",                func = "pd_debug_toggle",                  global = true,  type = "lua",                             desc = "[D]ebug UI Toggle" },
+    { name = "PdDebugPause",                   func = "pd_debug_pause",                   global = true,  type = "lua",                                                      desc = "[D]ebug [P]ause" },
+    { name = "PdDebugContinue",                func = "pd_debug_continue",                global = true,  type = "lua",                                                      desc = "[D]ebug [C]ontinue" },
+    { name = "PdDebugStepOver",                func = "pd_debug_step_over",               global = true,  type = "lua",                                                      desc = "[D]ebug [S]tep Over" },
+    { name = "PdDebugStepDown",                func = "pd_debug_step_down",               global = true,  type = "lua",                                                      desc = "[D]ebug Step [D]own" },
+    { name = "PdDebugStepUp",                  func = "pd_debug_step_up",                 global = true,  type = "lua",                                                      desc = "[D]ebug Step [U]p" },
+    { name = "PdDebugStepInto",                func = "pd_debug_step_into",               global = true,  type = "lua",                                                      desc = "[D]ebug Step [I]nto" },
+    { name = "PdDebugStepOut",                 func = "pd_debug_step_out",                global = true,  type = "lua",                                                      desc = "[D]ebug [F]inish Function (Step Out)" },
+    { name = "PdDebugRunToCursor",             func = "pd_debug_run_to_cursor",           global = true,  type = "lua",                                                      desc = "[D]ebug [R]un to cursor" },
+    { name = "PdDebugTerminate",               func = "pd_debug_terminate",               global = true,  type = "lua",                                                      desc = "[D]ebug [T]erminate" },
+    { name = "PdDebugBreakpoint",              func = "pd_debug_breakpoint",              global = true,  type = "lua",                                                      desc = "[D]ebug [B]reakpoint" },
+    { name = "PdDebugUIToggle",                func = "pd_debug_toggle",                  global = true,  type = "lua",                                                      desc = "[D]ebug UI Toggle" },
     -- setup debug watch for visual and normal mode
-    { name = "PdDebugWatch",                   func = "pd_debug_watch_under_cursor",      global = false, type = "lua",                             desc = "[D]ebug [w]atch under cursor",        opts = { range = true, nargs = "?" }, mode = "n" },
-    { name = "PdDebugWatch",                   func = "pd_debug_watch_under_cursor",      global = false, type = "lua",                             desc = "[D]ebug [w]atch under cursor",        opts = { range = true, nargs = "?" }, mode = "v" },
+    { name = "PdDebugWatch",                   func = "pd_debug_watch_under_cursor",      global = false, type = "lua",                                                      desc = "[D]ebug [w]atch under cursor",        opts = { range = true, nargs = "?" }, mode = "n" },
+    { name = "PdDebugWatch",                   func = "pd_debug_watch_under_cursor",      global = false, type = "lua",                                                      desc = "[D]ebug [w]atch under cursor",        opts = { range = true, nargs = "?" }, mode = "v" },
+    { name = "PDSaveDapWatches",               func = "pd_save_dap_watches",              type = "lua",   desc = "Save DAP watches to dap-watches.json at project root" },
+    { name = "PdRestoreDapWatches",            func = "pd_restore_dap_watches",           type = "lua",   desc = "Restore DAP watches from dap-watches.json at project root" },
 }
 
 -- helpful lookup table to find commands by name or function
@@ -354,6 +358,22 @@ function pd_nvim.debug_watch_under_cursor(opts)
     end
 
     local debug_watch_under_cursor = pd.debug_watch_under_cursor(opts)
+end
+
+function pd_nvim.pd_save_dap_watches()
+    if not pd_nvim.is_configured() then
+        return
+    end
+
+    pd.pd_save_dap_watches()
+end
+
+function pd_nvim.pd_restore_dap_watches()
+    if not pd_nvim.is_configured() then
+        return
+    end
+
+    pd.pd_restore_dap_watches()
 end
 
 setmetatable(pd_nvim, {

@@ -241,4 +241,50 @@ function debug.pd_debug_watch_under_cursor(opts)
     pcall(function() vim.fn.setreg('<cword>', word) end)
 end
 
+local function find_project_root()
+    local path = vim.fn.expand('%:p:h')
+    while path and path ~= "/" do
+        if vim.fn.isdirectory(path .. "/.git") == 1 then
+            return path
+        end
+        local parent = vim.fn.fnamemodify(path, ":h")
+        if parent == path then break end
+        path = parent
+    end
+    return vim.fn.getcwd()
+end
+
+function debug.pd_save_dap_watches()
+    ensure_dapui()
+    local watches = dapui.elements.watches.get()
+    local json = vim.fn.json_encode(watches)
+    local root = find_project_root()
+    local path = root .. "/dap-watches.json"
+    local file = io.open(path, "w")
+    if file then
+        file:write(json)
+        file:close()
+        print("Watches saved to " .. path)
+    else
+        print("Failed to write dap-watches.json")
+    end
+end
+
+function debug.pd_restore_dap_watches()
+    ensure_dapui()
+    local watches_file = find_project_root() .. "/dap-watches.json"
+    local file = io.open(watches_file, "r")
+    if not file then
+        vim.notify("dap-watches.json not found", vim.log.levels.ERROR)
+        return
+    end
+    local content = file:read("*a")
+    file:close()
+    local watches = vim.json.decode(content)
+    for _, watch in ipairs(watches) do
+        print("Restoring watch: " .. watch.expression)
+        dapui.elements.watches.add(watch.expression)
+    end
+end
+
 return debug
