@@ -170,4 +170,75 @@ function debug.pd_debug_run_to_cursor()
     dap.run_to_cursor()
 end
 
+function debug.pd_debug_watch_under_cursor(opts)
+    ensure_dapui()
+    opts            = opts or {}
+    local mode      = vim.fn.mode()
+    local word      = opts.args
+    -- we might be in command mode, so we need to check
+    -- attempt to get the range
+    -- if it fails,assume we're in normal mode
+    -- and get the word under the cursor
+
+    local start_pos = nil
+    local end_pos   = nil
+    -- unconditionally try to get the start and end positions
+    -- in case we have something selected but we're not in visual mode
+    pcall(function()
+        start_pos = vim.fn.getpos("'<")
+        end_pos = vim.fn.getpos("'>")
+    end)
+
+    local function shallow_equal(t1, t2)
+        for k, v in pairs(t1) do
+            if t2[k] ~= v then return false end
+        end
+        for k, v in pairs(t2) do
+            if t1[k] ~= v then return false end
+        end
+        return true
+    end
+
+    if start_pos == nil or end_pos == nil then
+        -- if we can't get the start and end positions, assume we're in normal mode
+        -- and get the word under the cursor
+        mode = "n"
+    else
+        if shallow_equal(start_pos, end_pos) then
+            -- if the start and end positions are the same, fallback to normal mode
+            mode = "n"
+        else
+            mode = "v"
+        end
+    end
+
+    if mode == "v" or mode == "V" or mode == "\22" or mode == "c" then
+        -- Visual mode: get selected range
+        local lines = vim.fn.getline(start_pos[2], end_pos[2])
+        if #lines == 0 then
+            return
+        end
+        if #lines == 1 then
+            word = string.sub(lines[1], start_pos[3], end_pos[3])
+        else
+            lines[1] = string.sub(lines[1], start_pos[3])
+            lines[#lines] = string.sub(lines[#lines], 1, end_pos[3])
+            word = table.concat(lines, "\n"):gsub("^%s*(.-)%s*$", "%1")
+        end
+    else
+        -- Normal mode: get word under cursor
+        -- or argument from command line
+        word = word or vim.fn.expand("<cword>")
+    end
+    if word and word ~= "" then
+        dapui.elements.watches.add(word)
+    end
+
+    --reset the start and end position
+    pcall(function() vim.fn.setpos("'<", { 0, 0, 0, 0 }) end)
+    pcall(function() vim.fn.setpos("'>", { 0, 0, 0, 0 }) end)
+    -- reset the word
+    pcall(function() vim.fn.setreg('<cword>', word) end)
+end
+
 return debug
