@@ -114,6 +114,10 @@ function debug.pd_debug_toggle()
     dapui.toggle()
 end
 
+function debug.pd_debug_breakpoint()
+    dap.toggle_breakpoint()
+end
+
 function debug.pd_debug_terminate()
     local function sigterm(process_name)
         pcall(function()
