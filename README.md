@@ -15,20 +15,6 @@ A very opinionated neovim helper for Perfect Dark PC port modding
   - `PdDebugTerminate`
   - `PdDebugBreakpoint`
 
-## Installation
-
-You can install `pd-nvim` using your favorite plugin manager. For example, if you're using `vim-plug`, add the following line to your `init.vim`:
-
-```lua
-  {
-    'pd-nvim',
-    config = true,
-    dev = true
-  },
-```
-
-Then run `:Lazy install pd-nvim`.
-
 ## Usage
 
 First, you need to set up the plugin with your preferences:
