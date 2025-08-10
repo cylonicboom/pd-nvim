@@ -19,6 +19,6 @@ return {
 			{ "nvim-telescope/telescope-live-grep-args.nvim" },
 		},
 		config = true,
-		dev = true,
+		dev = false,
 	},
 }
